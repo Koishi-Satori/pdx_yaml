@@ -27,16 +27,25 @@ import top.kkoishi.pml.exception.SyntaxException
  * ```
  * The COMMENT tokens can be ignored.
  */
-internal class Parser(val lexer: Lexer, val ignoreComment: Boolean = true) {
-    private var curToken: Token? = null
+internal abstract class Parser(val lexer: Lexer, val ignoreComment: Boolean = true) {
+    protected var curToken: Token? = null
     fun parse() {
         languageTag()
         entries()
     }
 
+    abstract fun processComment()
+
+    abstract fun processLanguage()
+
+    abstract fun processEntryKey()
+    abstract fun processEntryNumber()
+    abstract fun processEntryValue()
+
     private fun languageTag() {
         curToken = lexer.scan()
         verifyType(TokenType.LANGUAGE, "Require a language tag, but got $curToken")
+        processLanguage()
         curToken = lexer.scan()
         verifyType(TokenType.COLON, "A language tag should contains a colon, but got $curToken")
     }
@@ -48,8 +57,11 @@ internal class Parser(val lexer: Lexer, val ignoreComment: Boolean = true) {
             // then we need to skip the comments.
             if (curToken == null)
                 return
-            if (curToken!!.type == TokenType.COMMENT)
+            if (curToken!!.type == TokenType.COMMENT) {
+                if (!ignoreComment)
+                    processComment()
                 continue
+            }
             entry()
         }
     }
@@ -59,6 +71,7 @@ internal class Parser(val lexer: Lexer, val ignoreComment: Boolean = true) {
             TokenType.STRING,
             "A pdx yaml entry require a string as its key, but got $curToken"
         )
+        processEntryKey()
         curToken = lexer.scan()
         verifyType(
             TokenType.COLON,
@@ -66,8 +79,10 @@ internal class Parser(val lexer: Lexer, val ignoreComment: Boolean = true) {
         )
         curToken = lexer.scan()
         if (curToken!!.type == TokenType.NUMBER) {
+            processEntryNumber()
             curToken = lexer.scan()
         }
+        processEntryValue()
         verifyType(
             TokenType.STRING,
             "A pdx yaml entry require a string as its value, but got $curToken"
