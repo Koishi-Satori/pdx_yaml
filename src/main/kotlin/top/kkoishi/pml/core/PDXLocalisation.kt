@@ -1,5 +1,9 @@
 package top.kkoishi.pml.core
 
+import top.kkoishi.pml.io.PDXYamlOutput
+import java.io.ByteArrayOutputStream
+import java.io.StringBufferInputStream
+
 /**
  * A class which represents a PDX localisation file.
  */
@@ -16,12 +20,14 @@ data class PDXLocalisation(
 
     data class Entry(var key: String, var value: String, var number: Int = -1) {
         fun hasNumber() = number == -1
-        override fun toString(): String = "$key:${if (number == -1) "" else number} \"$value\""
+        override fun toString(): String = "$key:${if (number == -1) "" else number} $value"
     }
 
-    internal class Parser(lexer: Lexer) : top.kkoishi.pml.core.Parser(lexer) {
+    internal class Parser(lexer: Lexer, ignoreComment: Boolean = true) :
+        top.kkoishi.pml.core.Parser(lexer, ignoreComment) {
         private var key: String? = null
         private var num: Int = -1
+        private var keyIndex = -1
         private val instance = PDXLocalisation("", ArrayDeque(), ArrayDeque())
 
         override fun processComment() {
@@ -33,6 +39,7 @@ data class PDXLocalisation(
         }
 
         override fun processEntryKey() {
+            keyIndex = lexer.column
             key = curToken!!.content
         }
 
@@ -41,11 +48,20 @@ data class PDXLocalisation(
         }
 
         override fun processEntryValue() {
-            instance.entries.addLast(WithLineNumber(Entry(key!!, curToken!!.content, num)))
+            instance.entries.addLast(WithLineNumber(Entry(key!!, curToken!!.content, num), lexer.line, keyIndex))
             key = null
             num = -1
+            keyIndex = -1
         }
 
         fun result() = instance
+    }
+
+    override fun toString(): String {
+        val bos = ByteArrayOutputStream()
+        PDXYamlOutput.formattedOutput(bos, this)
+        val result = bos.toString()
+        bos.close()
+        return result
     }
 }

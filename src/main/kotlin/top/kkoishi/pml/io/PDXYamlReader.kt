@@ -25,7 +25,7 @@ class PDXYamlReader(private val reader: Reader) : Reader() {
     )
 
     fun readFull(ignoreComment: Boolean = true): PDXLocalisation {
-        val parser = PDXLocalisation.Parser(Lexer(ReaderCharIterator(reader)))
+        val parser = PDXLocalisation.Parser(Lexer(ReaderCharIterator(reader)), ignoreComment)
         parser.parse()
         return parser.result()
     }

@@ -91,7 +91,7 @@ internal class Lexer(val rest: CharIterator) {
         buf.append(peek)
         while (hasNext()) {
             peek = nextChar()
-            if (peek == '\r' || peek == '\n') {
+            if (peek == '\r' || peek == '\n' || peek == '#') {
                 prepeek.addLast(peek)
                 break
             }
@@ -120,7 +120,7 @@ internal class Lexer(val rest: CharIterator) {
 //                else -> buf.append(peek)
 //            }
 //        }
-        return Token.token(buf.toString(), TokenType.STRING)
+        return Token.token(buf.removeRange(buf.lastIndexOf('"') + 1, buf.length).toString(), TokenType.STRING)
     }
 
     private fun number(): Token {
@@ -169,6 +169,6 @@ internal class Lexer(val rest: CharIterator) {
 
     /* Use for platform function reference */
     private fun skipLineSepLinux(): Boolean = peek == '\n'
-    private fun skipLineSepWin(): Boolean  = peek == '\n'
+    private fun skipLineSepWin(): Boolean = peek == '\n'
     private fun skipLineSepMac(): Boolean = peek == '\r'
 }
