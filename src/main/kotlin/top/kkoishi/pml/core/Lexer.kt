@@ -126,15 +126,22 @@ internal class Lexer(val rest: CharIterator) {
     private fun number(): Token {
         buf.clear()
         buf.append(peek)
+        var keyFlag = false
         while (hasNext()) {
             peek = nextChar()
             if (!peek.isDigit()) {
+                if (!peek.isWhitespace() && peek != '"' && peek != ':') {
+                    if (!keyFlag)
+                        keyFlag = true
+                    buf.append(peek)
+                    continue
+                }
                 prepeek.addLast(peek)
                 break
             }
             buf.append(peek)
         }
-        return Token.token(buf.toString(), TokenType.NUMBER)
+        return Token.token(buf.toString(), if (keyFlag) TokenType.STRING else TokenType.NUMBER)
     }
 
     private fun string(): Token {
@@ -148,8 +155,6 @@ internal class Lexer(val rest: CharIterator) {
             }
             buf.append(peek)
         }
-        if (buf.contains("english"))
-            println(buf[0].code)
         return Token.token(buf.toString(), TokenType.STRING)
     }
 
