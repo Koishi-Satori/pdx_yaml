@@ -136,6 +136,8 @@ internal class Lexer(val rest: CharIterator) {
                     buf.append(peek)
                     continue
                 }
+                if (peek == ':')
+                    keyFlag = true
                 prepeek.addLast(peek)
                 break
             }
